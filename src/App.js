@@ -4,17 +4,38 @@ import './App.css';
 
 const ID_ENUM = {
   PC : '8gej2n93',
-  WEB : 'o7e25xew',
   PS2 : 'n5e17e27',
   DREAMCAST : 'v06d394z',
   N3DS : 'gz9qx60q',
   NDS : '7g6m8erk',
   PSP : '5negk9y7',
-  XBOX : 'jm95zz9o'
+  XBOX : 'jm95zz9o',
+  ANDROID : 'lq60nl94',
+  IOS : 'gde3xgek',
+  WEB : 'o7e25xew'
 }
 
-const SEARCH_BY = ID_ENUM.PC;
+const GAMETYPE_ENUM = {
+  WEBGAME : 'go1lem4p',
+  CATEGORY_EXTENSION : '53no817x',
+  EXPANSION_DLC : 'j8138myw',
+  FANGAME : 'd91jd1ex',
+  MINIGAME_GAMEMODE : 'v31r2mkw',
+  MOBILE : 'dj1gd1x5',
+  SERVER_MAP : '4xm721op',
+  ROMHACK : 'v4m291qw',
+  PRERELEASE : 'x3n6vme4',
+  MULTIGAME : 'rj1dy1o8',
+  MOD : 'lyn97m9o'
+}
+
+const SEARCH_BY = ID_ENUM.DREAMCAST;
+
 const GAMES_PER_PAGE = 10;
+const WAIT_PER_GAME = 200;
+
+const MAX_PAGES = 50000;
+
 const TIME_LOW_FILTER = 60;
 const TIME_HIGH_FILTER = 600;
 const MAX_YEAR_FILTER = 2019;
@@ -35,6 +56,7 @@ class App extends Component {
     if (a.record.time > b.record.time) return 1;
     return 0;
   }
+
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -71,7 +93,7 @@ class App extends Component {
     axios
       .get(url)
       .then(async response => {
-        if (response.data.data.length === 0 || loop > 50000) {
+        if (response.data.data.length === 0 || loop > MAX_PAGES) {
           return;
         }
         loop++;
@@ -89,9 +111,13 @@ class App extends Component {
 
             for (let i = 0; i < game.gametypes.length; i++) {
               if (
-                game.gametypes[i] === 'INSERT GAME TYPES' ||
-                game.gametypes[i] === 'INSERT GAME TYPES' ||
-                game.gametypes[i] === 'INSERT GAME TYPES'
+                game.gametypes[i] === GAMETYPE_ENUM.WEBGAME ||
+                game.gametypes[i] === GAMETYPE_ENUM.CATEGORY_EXTENSION ||
+                game.gametypes[i] === GAMETYPE_ENUM.MOBILE ||
+                game.gametypes[i] === GAMETYPE_ENUM.MOD ||
+                game.gametypes[i] === GAMETYPE_ENUM.ROMHACK ||
+                game.gametypes[i] === GAMETYPE_ENUM.SERVER_MAP ||
+                game.gametypes[i] === GAMETYPE_ENUM.MINIGAME_GAMEMODE
               ) {
                 return {
                   error: 'bad gametype',
@@ -103,9 +129,11 @@ class App extends Component {
             }
 
             for (let i = 0; i < game.platforms.length; i++) {
-              if (game.platforms[i] === ID_ENUM.WEB) {
+              if (game.platforms[i] === ID_ENUM.WEB ||
+                  game.platforms[i] === ID_ENUM.IOS ||
+                  game.platforms[i] === ID_ENUM.ANDROID) {
                 return {
-                  error: 'web game',
+                  error: 'bad platform',
                   record: {
                     time: 0
                   }
@@ -132,9 +160,8 @@ class App extends Component {
           })
         );
         let deletedArr = [];
-        console.log("starting sleep...")
-        await this.sleep(GAMES_PER_PAGE * 100)
-        console.log("awoke.")
+        console.log("sleeping...")
+        await this.sleep(GAMES_PER_PAGE * WAIT_PER_GAME)
 
         for (let i = newGames.length - 1; i >= 0; i--) {
           if (newGames[i].record.time === 0) {
