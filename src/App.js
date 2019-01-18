@@ -2,11 +2,22 @@ import React, { Component } from 'react';
 import axios from 'axios';
 import './App.css';
 
-const PC_ID = '8zjwp7vo';
-const WEB_ID = 'lk3g84vd';
+const ID_ENUM = {
+  PC : '8gej2n93',
+  WEB : 'o7e25xew',
+  PS2 : 'n5e17e27',
+  DREAMCAST : 'v06d394z',
+  N3DS : 'gz9qx60q',
+  NDS : '7g6m8erk',
+  PSP : '5negk9y7',
+  XBOX : 'jm95zz9o'
+}
+
+const SEARCH_BY = ID_ENUM.PC;
+const GAMES_PER_PAGE = 10;
 const TIME_LOW_FILTER = 60;
-const TIME_HIGH_FILTER = 300;
-const YEAR_FILTER = 2013;
+const TIME_HIGH_FILTER = 600;
+const MAX_YEAR_FILTER = 2019;
 
 class App extends Component {
   constructor(props) {
@@ -24,31 +35,36 @@ class App extends Component {
     if (a.record.time > b.record.time) return 1;
     return 0;
   }
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   getWorldRecord(id) {
-    return axios.get(`api/v1/games/${id}/records?top=1`).then(response => {
-      if (!response.data.data[0] || !response.data.data[0].runs[0]) {
-        return {
-          time: 0,
-          player: 'Invalid'
-        };
-      } else {
-        const record = response.data.data[0].runs[0].run;
-        if (
-          record.times.primary_t < TIME_LOW_FILTER ||
-          record.times.primary_t > TIME_HIGH_FILTER
-        ) {
+    return axios.get(`api/v1/games/${id}/records?top=1`)
+      .then(response => {
+        console.log("WR Query")
+        if (!response.data.data[0] || !response.data.data[0].runs[0]) {
           return {
             time: 0,
-            player: 'Too fast'
+            player: 'Invalid'
+          };
+        } else {
+          const record = response.data.data[0].runs[0].run;
+          if (
+            record.times.primary_t < TIME_LOW_FILTER ||
+            record.times.primary_t > TIME_HIGH_FILTER
+          ) {
+            return {
+              time: 0,
+              player: 'Too fast'
+            };
+          }
+          return {
+            time: record.times.primary_t,
+            player: record.players[0].id
           };
         }
-        return {
-          time: record.times.primary_t,
-          player: record.players[0].id
-        };
-      }
-    });
+      });
   }
 
   fetchGameList(url, list, deleted, offset, max, loop) {
@@ -62,7 +78,7 @@ class App extends Component {
 
         let newGames = await Promise.all(
           response.data.data.map(async game => {
-            if (game.released > YEAR_FILTER) {
+            if (game.released > MAX_YEAR_FILTER) {
               return {
                 error: 'too new',
                 record: {
@@ -73,9 +89,9 @@ class App extends Component {
 
             for (let i = 0; i < game.gametypes.length; i++) {
               if (
-                game.gametypes[i] === 'go1lem4p' ||
-                game.gametypes[i] === '4xm721op' ||
-                game.gametypes[i] === 'v4m291qw'
+                game.gametypes[i] === 'INSERT GAME TYPES' ||
+                game.gametypes[i] === 'INSERT GAME TYPES' ||
+                game.gametypes[i] === 'INSERT GAME TYPES'
               ) {
                 return {
                   error: 'bad gametype',
@@ -87,7 +103,7 @@ class App extends Component {
             }
 
             for (let i = 0; i < game.platforms.length; i++) {
-              if (game.platforms[i] === WEB_ID) {
+              if (game.platforms[i] === ID_ENUM.WEB) {
                 return {
                   error: 'web game',
                   record: {
@@ -116,6 +132,9 @@ class App extends Component {
           })
         );
         let deletedArr = [];
+        console.log("starting sleep...")
+        await this.sleep(GAMES_PER_PAGE * 100)
+        console.log("awoke.")
 
         for (let i = newGames.length - 1; i >= 0; i--) {
           if (newGames[i].record.time === 0) {
@@ -136,11 +155,12 @@ class App extends Component {
         this.setState(newState);
 
         const links = response.data.pagination.links;
+
         for (let i = 0; i < links.length; i++) {
           if (links[i].rel === 'next') {
             const newOffset = offset + max;
             this.fetchGameList(
-              `api/v1/games?platform=${PC_ID}&max=${max}&offset=${newOffset}`,
+              `api/v1/games?platform=${SEARCH_BY}&max=${max}&offset=${newOffset}`,
               list,
               deleted,
               newOffset,
@@ -150,6 +170,7 @@ class App extends Component {
             return;
           }
         }
+        console.log("Finished.")
       })
       .catch(err => {
         console.log(err);
@@ -157,13 +178,15 @@ class App extends Component {
   }
 
   componentWillMount() {
-    const max = 200,
+    const max = GAMES_PER_PAGE,
       list = [],
       deleted = [],
       offset = 0;
 
+    console.log("loading first page...")
+
     this.fetchGameList(
-      `api/v1/games?platform=${PC_ID}&max=${max}`,
+      `api/v1/games?platform=${SEARCH_BY}&max=${max}`,
       list,
       deleted,
       offset,
@@ -175,7 +198,7 @@ class App extends Component {
   render() {
     return (
       <div>
-        Game count: {this.state.games.length} / {this.state.total}
+        Game count: {this.state.games.length} / ~{this.state.total}
         <br /> <br />
         {this.state.games.map(game => (
           <div key={game.id}>
