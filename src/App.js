@@ -5,6 +5,7 @@ import './App.css';
 const ID_ENUM = {
   PC : '8gej2n93',
   PS2 : 'n5e17e27',
+  PS3 : 'mx6pwe3g',
   DREAMCAST : 'v06d394z',
   N3DS : 'gz9qx60q',
   NDS : '7g6m8erk',
@@ -29,15 +30,15 @@ const GAMETYPE_ENUM = {
   MOD : 'lyn97m9o'
 }
 
-const SEARCH_BY = ID_ENUM.DREAMCAST;
+const SEARCH_BY = ID_ENUM.PS3;
 
-const GAMES_PER_PAGE = 10;
+const GAMES_PER_PAGE = 50;
 const WAIT_PER_GAME = 200;
 
 const MAX_PAGES = 50000;
 
 const TIME_LOW_FILTER = 60;
-const TIME_HIGH_FILTER = 600;
+const TIME_HIGH_FILTER = 6000;
 const MAX_YEAR_FILTER = 2019;
 
 class App extends Component {
@@ -155,7 +156,8 @@ class App extends Component {
               id: game.id,
               record: record,
               name: game.names.international,
-              released: game.released
+              released: game.released,
+			  link: game.weblink
             };
           })
         );
@@ -232,6 +234,7 @@ class App extends Component {
             Name: {game.name} (id: {game.id}) <br />
             WR Time: {game.record.time} <br />
             Release Year: {game.released} <br />
+			Link : <a href={game.link} target="_blank">Link</a> <br />
             Player: {game.record.player}
             <br /> <br />
           </div>
